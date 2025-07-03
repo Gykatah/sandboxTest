@@ -29,7 +29,7 @@ export class Sandbox
         canvas.width = this.width;
         canvas.height = this.height;
         this.ctx = canvas.getContext("2d");
-        document.addEventListener("mousedown", () => { this.drawing = true });
+        document.addEventListener("mousedown", (event) => { this.drawing = true;this.move(event, canvas) });
         document.addEventListener("mouseup", () => { this.drawing = false; this.lastMouse = null });
         canvas.addEventListener("mousemove", (event) => this.move(event, canvas));
         this.gameLoop = this.gameLoop.bind(this);
@@ -85,8 +85,7 @@ export class Sandbox
                 const drawX = x + offsetX;
                 if (
                     drawY >= 0 && drawY < this.map.length &&
-                    drawX >= 0 && drawX < this.map[0].length &&
-                    this.map[drawY][drawX] === null
+                    drawX >= 0 && drawX < this.map[0].length
                 ) {
                     this.map[drawY][drawX] = { name: material };
                 }
@@ -129,7 +128,18 @@ export class Sandbox
         if (!block.lastTick) block.lastTick = currentTick
         if (block.lastTick !== currentTick) {
             block.lastTick = currentTick;
-            if (this.materials[block.name].gravity >= 1) {
+            if(block.name=="lightning"){
+                this.map[y][x] = null
+                if(block.dir!=4&&block.dir!=3&&block.dir!=2&&this.map[y+1]&&this.map[y+1][x+1]==null){
+                        this.map[y+1][x+1]={...block,dir:1}
+                }else if(block.dir!=4&&block.dir!=3&&block.dir!=2&&this.map[y+1]&&this.map[y+1][x+1]){
+                        this.map[y-1][x-1]={...block,dir:3}
+                }
+                if(block.dir!=4&&block.dir!=3&&block.dir!=1&&this.map[y+1]&&this.map[y+1][x-1]==null)this.map[y+1][x-1]={...block,dir:2}
+                if(block.dir!=4&&block.dir!=1&&block.dir!=2&&this.map[y-1]&&this.map[y-1][x-1]==null)this.map[y-1][x-1]={...block,dir:3}
+                if(block.dir!=1&&block.dir!=3&&block.dir!=2&&this.map[y-1]&&this.map[y-1][x+1]==null)this.map[y-1][x+1]={...block,dir:4}
+                
+            }else if (this.materials[block.name].gravity >= 1) {
                 this.gravityTest(block, x, y, this.materials[block.name].gravity)
             }
         }

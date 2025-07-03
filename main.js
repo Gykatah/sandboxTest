@@ -5,6 +5,8 @@ let materials = []
 materials.push(new Material("lava").setColor("#ff0000").setGravity(20))
 materials.push(new Material("water").setColor("#00aaff").setGravity(1))
 materials.push(new Material("dirt").setColor("#ffff00").setGravity(2))
+materials.push(new Material("stone").setColor("#aaaaaa"))
+materials.push(new Material("lightning").setColor("#ffffff"))
 const sandbox = new Sandbox("game", materials);
 
 document.querySelectorAll('input[name="item"]').forEach(radio => {
