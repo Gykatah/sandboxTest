@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <canvas id="game" style="background-color: black;image-rendering: pixelated;" width="400" height="600"></canvas>
+    
+    <input type="radio" name="item" value="water" id="water"> Water
+    <input type="radio" name="item" value="dirt" id="dirt"> Dirt
+    <input type="radio" name="item" value="lava" id="lava"> lava<br>
+
+    <label for="speed">Speed:</label>
+    <input type="range" id="speed" min="0" max="50" step="0.1" value="50">
+    <span id="speedValue">50.0x</span><br>
+    <label for="speed">Brush:</label>
+    <input type="range" id="size" min="1" max="5" step="1" value="1">
+    <span id="sizeValue">1.0x</span>
+
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>
