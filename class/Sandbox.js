@@ -140,25 +140,27 @@ export class Sandbox
                 if(block.dir!=1&&block.dir!=3&&block.dir!=2&&this.map[y-1]&&this.map[y-1][x+1]==null)this.map[y-1][x+1]={...block,dir:4}
                 
             }else if (this.materials[block.name].gravity >= 1) {
-                this.gravityTest(block, x, y, this.materials[block.name].gravity)
+                this.gravityTest(block, x, y, this.materials[block.name].gravity, -1)
+            }else if (this.materials[block.name].gravity < 0) {
+                this.gravityTest(block, x, y, this.materials[block.name].gravity, +1)
             }
         }
     }
 
-    gravityTest(block, x, y, density)
+    gravityTest(block, x, y, density,dirY)
     {
-        const below = this.map[y - 1]?.[x];
-        const belowLeft = this.map[y - 1]?.[x - 1];
-        const belowRight = this.map[y - 1]?.[x + 1];
+        const below = this.map[y + dirY]?.[x];
+        const belowLeft = this.map[y + dirY]?.[x - 1];
+        const belowRight = this.map[y  + dirY]?.[x + 1];
         const left = this.map[y]?.[x - 1];
         const right = this.map[y]?.[x + 1];
-        if (!below && this.map[y - 1]) {
-            this.map[y - 1][x] = { ...block };
+        if (!below && this.map[y + dirY]) {
+            this.map[y + dirY][x] = { ...block };
             this.map[y][x] = null;
             return;
         }
-        if (this.map[y - 1] && this.materials[below.name]?.gravity < density) {
-            this.map[y - 1][x] = { ...block };
+        if (this.map[y + dirY] && this.materials[below.name]?.gravity < density) {
+            this.map[y + dirY][x] = { ...block };
             if(block.name!="lava"){
                 this.map[y][x] = below;
             }else{

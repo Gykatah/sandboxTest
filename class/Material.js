@@ -18,4 +18,8 @@ export class Material{
         this.gravity = gravity
         return this
     }
+    setCycle(cycle) {
+        this.cycle = cycle;
+        return this;
+    }
 }

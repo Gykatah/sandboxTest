@@ -4,6 +4,7 @@ import {Sandbox} from "./class/Sandbox.js"
 let materials = []
 materials.push(new Material("lava").setColor("#ff0000").setGravity(20))
 materials.push(new Material("water").setColor("#00aaff").setGravity(1))
+materials.push(new Material("water2").setColor("#0055aa").setGravity(-1).setCycle(0.001))
 materials.push(new Material("dirt").setColor("#ffff00").setGravity(2))
 materials.push(new Material("stone").setColor("#aaaaaa"))
 materials.push(new Material("lightning").setColor("#ffffff"))
