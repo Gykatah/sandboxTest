@@ -5,8 +5,9 @@ export class Sandbox
     lastTime = performance.now();
     width = 400;
     height = 600;
+    pixelperpixel = 40
     materials = {};
-    speed = 50;
+    speed = 2;
     size = 1;
     fps = 0;
     opAvg = 0;
@@ -24,12 +25,12 @@ export class Sandbox
         {
             this.materials[material.name] = material
         })
-        this.map = Array.from({ length: this.height / 10 }, () => Array(this.width / 10).fill(null));
+        this.map = Array.from({ length: this.height / this.pixelperpixel }, () => Array(this.width / this.pixelperpixel).fill({ name: "air", temperature: 24 }));
         const canvas = document.getElementById(canvasId);
         canvas.width = this.width;
         canvas.height = this.height;
         this.ctx = canvas.getContext("2d");
-        document.addEventListener("mousedown", (event) => { this.drawing = true;this.move(event, canvas) });
+        document.addEventListener("mousedown", (event) => { this.drawing = true; this.move(event, canvas) });
         document.addEventListener("mouseup", () => { this.drawing = false; this.lastMouse = null });
         canvas.addEventListener("mousemove", (event) => this.move(event, canvas));
         this.gameLoop = this.gameLoop.bind(this);
@@ -41,19 +42,20 @@ export class Sandbox
             const rect = canvas.getBoundingClientRect();
             const mouseX = event.clientX - rect.left;
             const mouseY = event.clientY - rect.top;
-            const x = Math.floor(mouseX / 10);
-            const y = Math.floor((this.height - mouseY) / 10);
+            const x = Math.floor(mouseX / this.pixelperpixel);
+            const y = Math.floor((this.height - mouseY) / this.pixelperpixel);
 
             if (this.lastMouse) {
                 this.drawLine(this.lastMouse.x, this.lastMouse.y, x, y, this.item);
             } else {
-                this.drawBrush(x,y,this.item)
+                this.drawBrush(x, y, this.item)
             }
 
             this.lastMouse = { x, y };
         }
     }
-    drawLine(x0, y0, x1, y1, material) {
+    drawLine(x0, y0, x1, y1, material)
+    {
         const dx = Math.abs(x1 - x0);
         const dy = Math.abs(y1 - y0);
         const sx = x0 < x1 ? 1 : -1;
@@ -77,7 +79,8 @@ export class Sandbox
         }
     }
 
-    drawBrush(x, y, material) {
+    drawBrush(x, y, material)
+    {
         const half = Math.floor(this.size / 2);
         for (let offsetY = -half; offsetY <= half; offsetY++) {
             for (let offsetX = -half; offsetX <= half; offsetX++) {
@@ -85,9 +88,10 @@ export class Sandbox
                 const drawX = x + offsetX;
                 if (
                     drawY >= 0 && drawY < this.map.length &&
-                    drawX >= 0 && drawX < this.map[0].length
+                    drawX >= 0 && drawX < this.map[0].length &&
+                    this.map[drawY][drawX].name === "air"
                 ) {
-                    this.map[drawY][drawX] = { name: material };
+                    this.map[drawY][drawX] = { ...this.materials[material] };
                 }
             }
         }
@@ -98,16 +102,28 @@ export class Sandbox
     {
         this.ctx.clearRect(0, 0, this.width, this.height);
         let operations = 0;
-        for (let y = 0; y < this.height / 10; y++) {
-            for (let x = 0; x < this.width / 10; x++) {
+        for (let y = 0; y < this.height / this.pixelperpixel; y++) {
+            for (let x = 0; x < this.width / this.pixelperpixel; x++) {
                 const cell = this.map[y][x];
                 if (cell) {
                     this.update(delta, cell, y, x)
                     const color = this.materials[cell.name]?.getColor() || "#ff00ff";
+                    const minTemp = -100, maxTemp = 100;
+                    const t = Math.max(minTemp, Math.min(maxTemp, cell.temperature || 0));
+                    const ratio = (t - minTemp) / (maxTemp - minTemp);
+                    const r = Math.round(255 * ratio);
+                    const b = Math.round(255 * (1 - ratio));
+                    const g = Math.round(255 * (1 - Math.abs(ratio - 0.5) * 2));
+                    const color2 = `rgba(${r},${g},${b},0.4)`;
                     this.ctx.fillStyle = color;
-                    const px = x * 10;
-                    const py = this.height - (y + 1) * 10;
-                    this.ctx.fillRect(px, py, 10, 10);
+                    const px = x * this.pixelperpixel;
+                    const py = this.height - (y + 1) * this.pixelperpixel;
+                    this.ctx.fillRect(px, py, this.pixelperpixel, this.pixelperpixel);
+                    this.ctx.fillStyle = color2;
+                    this.ctx.fillRect(px, py, this.pixelperpixel, this.pixelperpixel);
+                    this.ctx.fillStyle = "white";
+                    this.ctx.font = (cell.temperature<10?1.6*this.pixelperpixel:cell.temperature<100?0.8*this.pixelperpixel:0.4*this.pixelperpixel)+"px monospace";
+                    this.ctx.fillText(cell.temperature || 0, px, py + this.pixelperpixel);
                     operations++;
                 }
             }
@@ -128,43 +144,62 @@ export class Sandbox
         if (!block.lastTick) block.lastTick = currentTick
         if (block.lastTick !== currentTick) {
             block.lastTick = currentTick;
-            if(block.name=="lightning"){
-                this.map[y][x] = null
-                if(block.dir!=4&&block.dir!=3&&block.dir!=2&&this.map[y+1]&&this.map[y+1][x+1]==null){
-                        this.map[y+1][x+1]={...block,dir:1}
-                }else if(block.dir!=4&&block.dir!=3&&block.dir!=2&&this.map[y+1]&&this.map[y+1][x+1]){
-                        this.map[y-1][x-1]={...block,dir:3}
-                }
-                if(block.dir!=4&&block.dir!=3&&block.dir!=1&&this.map[y+1]&&this.map[y+1][x-1]==null)this.map[y+1][x-1]={...block,dir:2}
-                if(block.dir!=4&&block.dir!=1&&block.dir!=2&&this.map[y-1]&&this.map[y-1][x-1]==null)this.map[y-1][x-1]={...block,dir:3}
-                if(block.dir!=1&&block.dir!=3&&block.dir!=2&&this.map[y-1]&&this.map[y-1][x+1]==null)this.map[y-1][x+1]={...block,dir:4}
-                
-            }else if (this.materials[block.name].gravity >= 1) {
+            if (this.materials[block.name].gravity >= 1) {
                 this.gravityTest(block, x, y, this.materials[block.name].gravity, -1)
-            }else if (this.materials[block.name].gravity < 0) {
+            } else if (this.materials[block.name].gravity < 0) {
                 this.gravityTest(block, x, y, this.materials[block.name].gravity, +1)
             }
         }
     }
 
-    gravityTest(block, x, y, density,dirY)
+    temperatureTest()
+    {
+        const tempMap = JSON.parse(JSON.stringify(this.map))
+        for (let y = 0; y < this.height / this.pixelperpixel; y++) {
+            for (let x = 0; x < this.width / this.pixelperpixel; x++) {
+                const block = tempMap[y][x];
+                const current = tempMap[y]?.[x];
+                if (!current || current.temperature == null) return;
+                const neighbors = [
+                    [x, y - 1],
+                    [x + 1, y],
+                ];
+                for (const [nx, ny] of neighbors) {
+                    const neighbor = tempMap[ny]?.[nx];
+                    if (!neighbor || neighbor.temperature == null) continue;
+
+                    const tempA = neighbor.temperature;
+                    const tempB = current.temperature; 
+                    const transA = neighbor.transmutator ?? 1;
+                    const transB = block.transmutator ?? 1;
+                    const conductivity = (transA + transB) / 2;
+                    const delta = (tempA - tempB) * conductivity;
+                    neighbor.temperature -= delta;
+                    current.temperature += delta;
+                }
+            }
+        }
+        this.map = tempMap
+    }
+
+    gravityTest(block, x, y, density, dirY)
     {
         const below = this.map[y + dirY]?.[x];
         const belowLeft = this.map[y + dirY]?.[x - 1];
-        const belowRight = this.map[y  + dirY]?.[x + 1];
+        const belowRight = this.map[y + dirY]?.[x + 1];
         const left = this.map[y]?.[x - 1];
         const right = this.map[y]?.[x + 1];
         if (!below && this.map[y + dirY]) {
             this.map[y + dirY][x] = { ...block };
-            this.map[y][x] = null;
+            this.map[y][x] = { ...this.materials["air"], temperature: block.temperature };
             return;
         }
         if (this.map[y + dirY] && this.materials[below.name]?.gravity < density) {
             this.map[y + dirY][x] = { ...block };
-            if(block.name!="lava"){
+            if (block.name != "lava") {
                 this.map[y][x] = below;
-            }else{
-                this.map[y][x] = null;
+            } else {
+                this.map[y][x] = { ...this.materials["air"], temperature: block.temperature };
             }
             return;
         }
@@ -178,7 +213,7 @@ export class Sandbox
         if (supportedBelow && supportedBelowSides && block.name != "water") return;
         if (block.name != "water" && y == 0) return
         if (!side || this.materials[side.name]?.gravity < density && this.map[y][x + dir]) {
-            this.map[y][x] = side || null;
+            this.map[y][x] = side || { ...this.materials["air"], temperature: block.temperature };
             this.map[y][x + dir] = { ...block };
             return;
         }
@@ -187,8 +222,9 @@ export class Sandbox
 
     gameLoop(now)
     {
-        if (this.globalTime > 50) {
-            this.globalTime -= 50
+        if (this.globalTime > 10) {
+            this.globalTime -= 10
+            this.temperatureTest()
         }
         // this.drawLine(3,50,6,50,"water")
         const delta = (now - this.lastTime) / 1000;
